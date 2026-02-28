@@ -23,8 +23,8 @@ body {
     gap: 2px;
     background-color: #222;
     width: 100%;
-    max-width: 400px; /* desktopon ne legyen túl nagy */
-    aspect-ratio: 10 / 20; /* mindig 10x20 arányú */
+    max-width: 400px; /* desktop max */
+    aspect-ratio: 10 / 20;
 }
 .cell {
     width: 100%;
@@ -48,13 +48,27 @@ body {
 .button {
     background-color: #444;
     color: #fff;
-    padding: 12px 18px;
+    padding: 16px 24px;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 1.2em;
     user-select: none;
+    min-width: 60px;
+    text-align: center;
 }
 .button:active {
     background-color: #666;
+}
+
+/* Mobil optimalizálás */
+@media (max-width: 500px) {
+    #tetris {
+        max-width: 300px;
+    }
+    .button {
+        padding: 18px 26px;
+        font-size: 1.4em;
+        min-width: 70px;
+    }
 }
 </style>
 </head>
@@ -159,7 +173,7 @@ function clearLines(){
             }
             score+=100;
             scoreDisplay.textContent='Pont: ' + score;
-            r++; // újraellenőrzés
+            r++;
         }
     }
 }
