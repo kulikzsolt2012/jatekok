@@ -2,8 +2,10 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Kő Papír Olló – Sci-Fi Hanggal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kő Papír Olló – Sci-Fi Mobil</title>
 <style>
+/* Alap stílusok */
 body {
     margin: 0;
     font-family: 'Orbitron', sans-serif;
@@ -14,19 +16,23 @@ body {
 }
 
 h1 {
-    margin-top: 40px;
-    font-size: 42px;
+    margin-top: 20px;
+    font-size: 6vw; /* rugalmas méret */
     color: #0ff;
     text-shadow: 0 0 20px #0ff;
 }
 
+/* Gombok */
 .buttons {
-    margin: 30px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20px 0;
 }
 
 button {
-    font-size: 22px;
-    padding: 12px 25px;
+    font-size: 5vw;
+    padding: 10px 15px;
     margin: 10px;
     border: none;
     border-radius: 12px;
@@ -35,6 +41,7 @@ button {
     color: #0ff;
     box-shadow: 0 0 10px #0ff;
     transition: 0.2s;
+    min-width: 80px;
 }
 
 button:hover {
@@ -42,17 +49,19 @@ button:hover {
     box-shadow: 0 0 25px #0ff;
 }
 
+/* Gépi választás */
 #computerChoice {
-    margin-top: 30px;
-    height: 150px;
-    font-size: 100px;
-    line-height: 150px;
+    margin-top: 20px;
+    height: 20vw;
+    font-size: 15vw;
+    line-height: 20vw;
     text-shadow: 0 0 15px #0ff, 0 0 30px #0ff80;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
+/* Animáció */
 .animate-emoji {
     animation: popRotate 1s ease-in-out;
     display: inline-block;
@@ -64,18 +73,29 @@ button:hover {
     100% { transform: scale(1) rotateY(360deg); opacity: 1; }
 }
 
+/* Eredmény */
 #result {
-    font-size: 26px;
-    margin-top: 20px;
+    font-size: 5vw;
+    margin-top: 15px;
     font-weight: bold;
     text-shadow: 0 0 15px #0ff;
-    min-height: 60px;
+    min-height: 6vw;
 }
 
+/* Score */
 .score {
-    margin-top: 20px;
-    font-size: 20px;
+    margin-top: 15px;
+    font-size: 4vw;
     text-shadow: 0 0 10px #0ff;
+}
+
+/* Mobil finomítás */
+@media (min-width: 600px) {
+    h1 { font-size: 36px; }
+    button { font-size: 22px; padding: 12px 25px; }
+    #computerChoice { font-size: 100px; height: 150px; line-height: 150px; }
+    #result { font-size: 26px; min-height: 60px; }
+    .score { font-size: 20px; }
 }
 </style>
 </head>
@@ -109,11 +129,7 @@ let playerScore = 0;
 let computerScore = 0;
 
 const choices = ["kő", "papír", "olló"];
-const emoji = {
-    "kő": "🪨",
-    "papír": "📄",
-    "olló": "✂️"
-};
+const emoji = { "kő": "🪨", "papír": "📄", "olló": "✂️" };
 
 // Hangok
 const clickSound = document.getElementById("clickSound");
@@ -123,14 +139,12 @@ const loseSound = document.getElementById("loseSound");
 const drawSound = document.getElementById("drawSound");
 
 function play(playerChoice) {
-    clickSound.play(); // gombnyomás hang
+    clickSound.play();
     const computerDiv = document.getElementById("computerChoice");
     computerDiv.innerHTML = '';
     let i = 0;
 
-    // Pörgő animáció hang
     spinSound.play();
-
     const interval = setInterval(() => {
         const span = document.createElement('span');
         span.textContent = emoji[choices[i % 3]];
