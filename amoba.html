@@ -2,72 +2,77 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pro Amőba AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Amőba – Reszponzív Rács</title>
 
 <style>
-:root{
-    --cell-size:30px;
-    --bg1:#0f172a;
-    --bg2:#1e293b;
-    --cell:#334155;
-    --x:#38bdf8;
-    --o:#f43f5e;
+:root {
+  --cell-size: 40px;
+  --bg: #0f172a;
+  --line: #94a3b8;
+  --x-color: #38bdf8;
+  --o-color: #f43f5e;
 }
-body{
-    margin:0;
-    font-family:system-ui;
-    background:linear-gradient(135deg,var(--bg1),var(--bg2));
-    color:white;
-    text-align:center;
+body {
+  margin:0;
+  font-family: system-ui;
+  background: var(--bg);
+  color:white;
+  text-align:center;
 }
-h1{margin-top:20px;}
-.controls{margin:15px;}
-select,button{
-    padding:8px 14px;
-    border:none;
-    border-radius:8px;
-    margin:5px;
-    cursor:pointer;
+h1 {margin:15px;font-size:1.5rem;}
+.controls {margin:10px;}
+select,button {
+  padding:10px 14px;
+  border:none;
+  border-radius:8px;
+  margin:5px;
+  font-size:16px;
+  cursor:pointer;
 }
-button{background:#38bdf8;color:black;font-weight:bold;}
-#board{
-    display:grid;
-    justify-content:center;
-    margin:20px auto;
-    background:#1e293b;
-    padding:10px;
-    border-radius:12px;
-    box-shadow:0 0 25px rgba(0,0,0,0.6);
+button {background:#38bdf8;color:black;font-weight:bold;}
+#status {font-size:18px;margin-top:10px;min-height:24px;}
+#board {
+  display:grid;
+  justify-content:center;
+  margin:10px auto;
+  touch-action: manipulation;
+  background: var(--line);
+  border-radius:8px;
+  max-width:95vw;
 }
-.cell{
-    width:var(--cell-size);
-    height:var(--cell-size);
-    background:var(--cell);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.15s;
+.cell {
+  background: var(--bg);
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  cursor:pointer;
+  user-select:none;
+  font-size: calc(var(--cell-size) * 0.7);
+  transition:0.15s;
 }
-.cell:hover{background:#475569;}
-.cell.X{color:var(--x);animation:pop 0.15s;}
-.cell.O{color:var(--o);animation:pop 0.15s;}
-@keyframes pop{from{transform:scale(0);}to{transform:scale(1);}}
-.winner{background:#22c55e!important;color:white!important;}
-#status{font-size:18px;margin-top:10px;}
+.cell:hover {background:#475569;}
+.cell.X {color: var(--x-color); animation: pop 0.15s;}
+.cell.O {color: var(--o-color); animation: pop 0.15s;}
+@keyframes pop {from{transform:scale(0);}to{transform:scale(1);}}
+.winner {background:#22c55e!important;color:white!important;}
 </style>
 </head>
 <body>
 
-<h1>⚡ Pro Amőba – Heurisztikus AI</h1>
+<h1>⚡ Amőba – Reszponzív</h1>
 
 <div class="controls">
+<label>Pálya:
 <select id="sizeSelect">
-<option value="15">15x15</option>
-<option value="19">19x19</option>
+<option value="10">10×10</option>
+<option value="12">12×12</option>
+<option value="15" selected>15×15</option>
+<option value="19">19×19</option>
 </select>
+</label>
 <button onclick="startGame()">Új játék</button>
 </div>
 
@@ -75,181 +80,152 @@ button{background:#38bdf8;color:black;font-weight:bold;}
 <div id="board"></div>
 
 <script>
-let size=15;
-let board=[];
-let currentPlayer="X";
-let gameActive=true;
-const winLength=5;
+let size = 15;
+let board = [];
+let currentPlayer = "X";
+let gameActive = true;
+const winLength = 5;
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
 
-const boardEl=document.getElementById("board");
-const statusEl=document.getElementById("status");
-
-/* ===== HANG ===== */
-const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-
+/* HANG */
+const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 function playTone(freq,duration){
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.frequency.value=freq;
-    osc.type="sine";
-    osc.start();
-    gain.gain.setValueAtTime(0.2,audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime+duration);
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.value=freq; osc.type="sine";
+  gain.gain.setValueAtTime(0.2,audioCtx.currentTime);
+  osc.start(); osc.stop(audioCtx.currentTime+duration);
 }
-
 function soundMove(){playTone(400,0.05);}
 function soundAI(){playTone(200,0.07);}
 function soundWin(){playTone(600,0.3);}
 
-/* ===== JÁTÉK ===== */
-
+/* START */
 function startGame(){
-    size=parseInt(sizeSelect.value);
-    board=Array(size).fill().map(()=>Array(size).fill(""));
-    currentPlayer="X";
-    gameActive=true;
-    statusEl.textContent="Te jössz (X)";
-    renderBoard();
+  size = parseInt(document.getElementById("sizeSelect").value);
+  board = Array(size).fill().map(()=>Array(size).fill(""));
+  currentPlayer = "X"; gameActive = true;
+  statusEl.textContent = "Te jössz (X)";
+  renderBoard();
 }
 
+/* RENDER */
 function renderBoard(){
-    boardEl.innerHTML="";
-    boardEl.style.gridTemplateColumns=`repeat(${size}, var(--cell-size))`;
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-            const cell=document.createElement("div");
-            cell.className="cell";
-            cell.dataset.r=r;
-            cell.dataset.c=c;
-            cell.onclick=playerMove;
-            boardEl.appendChild(cell);
-        }
+  boardEl.innerHTML = "";
+  boardEl.style.gridTemplateColumns = `repeat(${size}, var(--cell-size))`;
+  boardEl.style.gridTemplateRows = `repeat(${size}, var(--cell-size))`;
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.addEventListener("click", playerMove);
+      cell.addEventListener("touchstart", playerMove);
+      boardEl.appendChild(cell);
     }
+  }
 }
 
+/* PLAYER MOVE */
 function playerMove(e){
-    if(!gameActive||currentPlayer!=="X")return;
-    const r=+e.target.dataset.r;
-    const c=+e.target.dataset.c;
-    if(board[r][c]!=="")return;
-    makeMove(r,c,"X");
-    soundMove();
-    if(gameActive)setTimeout(aiMove,200);
+  e.preventDefault();
+  if(!gameActive || currentPlayer!=="X") return;
+  const r = +e.target.dataset.r;
+  const c = +e.target.dataset.c;
+  if(board[r][c]!=="") return;
+  makeMove(r,c,"X");
+  soundMove();
+  if(gameActive) setTimeout(aiMove,150);
 }
 
+/* MAKE MOVE */
 function makeMove(r,c,player){
-    board[r][c]=player;
-    const cell=boardEl.children[r*size+c];
-    cell.textContent=player;
-    cell.classList.add(player);
-
-    const win=checkWinner(r,c,player);
-    if(win){
-        highlight(win);
-        statusEl.textContent=player==="X"?"Nyertél 🎉":"AI nyert 🤖";
-        soundWin();
-        gameActive=false;
-        return;
-    }
-    currentPlayer=player==="X"?"O":"X";
+  board[r][c]=player;
+  const cell = boardEl.children[r*size+c];
+  cell.textContent = player;
+  cell.classList.add(player);
+  const winCells = checkWinner(r,c,player);
+  if(winCells){
+    highlight(winCells);
+    statusEl.textContent = player==="X"?"Nyertél 🎉":"AI nyert 🤖";
+    soundWin();
+    gameActive=false;
+    return;
+  }
+  currentPlayer = player==="X"?"O":"X";
 }
 
-/* ===== GYŐZELEM ===== */
-
+/* CHECK WINNER */
 function checkDir(r,c,dr,dc,player){
-    let count=1,cells=[[r,c]];
-    let rr=r+dr,cc=c+dc;
-    while(inBoard(rr,cc)&&board[rr][cc]===player){cells.push([rr,cc]);count++;rr+=dr;cc+=dc;}
-    rr=r-dr;cc=c-dc;
-    while(inBoard(rr,cc)&&board[rr][cc]===player){cells.unshift([rr,cc]);count++;rr-=dr;cc-=dc;}
-    return count>=winLength?cells:null;
+  let count=1,cells=[[r,c]];
+  let rr=r+dr, cc=c+dc;
+  while(inBoard(rr,cc) && board[rr][cc]===player){cells.push([rr,cc]); count++; rr+=dr; cc+=dc;}
+  rr=r-dr; cc=c-dc;
+  while(inBoard(rr,cc) && board[rr][cc]===player){cells.unshift([rr,cc]); count++; rr-=dr; cc-=dc;}
+  return count>=winLength ? cells : null;
 }
-
 function checkWinner(r,c,p){
-    return checkDir(r,c,0,1,p)||
-           checkDir(r,c,1,0,p)||
-           checkDir(r,c,1,1,p)||
-           checkDir(r,c,1,-1,p);
+  return checkDir(r,c,0,1,p) || checkDir(r,c,1,0,p) || checkDir(r,c,1,1,p) || checkDir(r,c,1,-1,p);
 }
+function highlight(cells){cells.forEach(([r,c])=>boardEl.children[r*size+c].classList.add("winner"));}
+function inBoard(r,c){return r>=0&&r<size && c>=0&&c<size;}
 
-function highlight(cells){
-    cells.forEach(([r,c])=>boardEl.children[r*size+c].classList.add("winner"));
-}
-
-function inBoard(r,c){return r>=0&&r<size&&c>=0&&c<size;}
-
-/* ===== HEURISZTIKUS AI ===== */
-
+/* HEURISTIC AI */
 function aiMove(){
-    if(!gameActive)return;
-
-    let bestScore=-Infinity;
-    let bestMove=null;
-
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-            if(board[r][c]===""&&hasNeighbor(r,c)){
-                board[r][c]="O";
-                let score=evaluate("O");
-                board[r][c]="";
-
-                board[r][c]="X";
-                score+=evaluate("X")*0.8;
-                board[r][c]="";
-
-                if(score>bestScore){
-                    bestScore=score;
-                    bestMove={r,c};
-                }
-            }
-        }
+  if(!gameActive) return;
+  let bestScore=-Infinity, bestMove=null;
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      if(board[r][c]==="" && hasNeighbor(r,c)){
+        board[r][c]="O"; let score=evaluate("O"); board[r][c]="";
+        board[r][c]="X"; score+=evaluate("X")*0.8; board[r][c]="";
+        if(score>bestScore){bestScore=score; bestMove={r,c};}
+      }
     }
-
-    if(!bestMove) bestMove={r:Math.floor(size/2),c:Math.floor(size/2)};
-    makeMove(bestMove.r,bestMove.c,"O");
-    soundAI();
+  }
+  if(!bestMove) bestMove={r:Math.floor(size/2),c:Math.floor(size/2)};
+  makeMove(bestMove.r,bestMove.c,"O");
+  soundAI();
 }
 
 function evaluate(player){
-    let score=0;
-    const patterns=[100000,10000,1000,100];
-
-    for(let r=0;r<size;r++){
-        for(let c=0;c<size;c++){
-            if(board[r][c]===player){
-                score+=countLine(r,c,0,1,player,patterns);
-                score+=countLine(r,c,1,0,player,patterns);
-                score+=countLine(r,c,1,1,player,patterns);
-                score+=countLine(r,c,1,-1,player,patterns);
-            }
-        }
+  let score=0;
+  const patterns=[100000,10000,1000,100];
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      if(board[r][c]===player){
+        score+=countLine(r,c,0,1,player,patterns);
+        score+=countLine(r,c,1,0,player,patterns);
+        score+=countLine(r,c,1,1,player,patterns);
+        score+=countLine(r,c,1,-1,player,patterns);
+      }
     }
-    return score;
+  }
+  return score;
 }
 
 function countLine(r,c,dr,dc,player,patterns){
-    let count=0;
-    let rr=r,cc=c;
-    while(inBoard(rr,cc)&&board[rr][cc]===player){
-        count++; rr+=dr; cc+=dc;
-    }
-    if(count>=5)return patterns[0];
-    if(count===4)return patterns[1];
-    if(count===3)return patterns[2];
-    if(count===2)return patterns[3];
-    return 0;
+  let count=0, rr=r, cc=c;
+  while(inBoard(rr,cc) && board[rr][cc]===player){count++; rr+=dr; cc+=dc;}
+  if(count>=5) return patterns[0];
+  if(count===4) return patterns[1];
+  if(count===3) return patterns[2];
+  if(count===2) return patterns[3];
+  return 0;
 }
 
 function hasNeighbor(r,c){
-    for(let dr=-1;dr<=1;dr++){
-        for(let dc=-1;dc<=1;dc++){
-            let rr=r+dr,cc=c+dc;
-            if(inBoard(rr,cc)&&board[rr][cc]!=="")return true;
-        }
+  for(let dr=-1;dr<=1;dr++){
+    for(let dc=-1;dc<=1;dc++){
+      if(dr===0 && dc===0) continue;
+      const rr=r+dr, cc=c+dc;
+      if(inBoard(rr,cc) && board[rr][cc]!=="") return true;
     }
-    return false;
+  }
+  return false;
 }
 
 startGame();
