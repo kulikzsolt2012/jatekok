@@ -84,6 +84,10 @@ function createJoystick(stickId){
 const moveJoy=createJoystick('moveStick');
 const shootJoy=createJoystick('shootStick');
 
+// Shoot control
+let shootCooldown=0;
+const shootInterval=10; // nagyobb = lassabb lövés
+
 // Spawn enemies
 function spawnEnemy(type){
     const x=Math.random()*canvas.width;
@@ -99,10 +103,8 @@ function update(){
     if(gameOver) return;
 
     // Desktop move
-    if(keys['w']||keys['ArrowUp']) player.y-=player.speed;
-    if(keys['s']||keys['ArrowDown']) player.y+=player.speed;
-    if(keys['a']||keys['ArrowLeft']) player.x-=player.speed;
-    if(keys['d']||keys['ArrowRight']) player.x+=player.speed;
+    player.x+=(keys['d']?1:keys['a']?-1:0)*player.speed;
+    player.y+=(keys['s']?1:keys['w']?-1:0)*player.speed;
 
     // Mobile move
     player.x+=moveJoy.getX()*player.speed*2;
@@ -110,13 +112,17 @@ function update(){
     player.x=Math.max(player.size, Math.min(canvas.width-player.size, player.x));
     player.y=Math.max(player.size, Math.min(canvas.height-player.size, player.y));
 
-    // Mobile shoot
-    if(shootJoy.getX()!=0 || shootJoy.getY()!=0){
-        const angle=Math.atan2(shootJoy.getY(), shootJoy.getX());
-        shoot(angle);
-    }
+    // Mobile shoot joystick
+    if(Math.abs(shootJoy.getX())>0.1 || Math.abs(shootJoy.getY())>0.1){
+        shootCooldown++;
+        if(shootCooldown>=shootInterval){
+            const angle=Math.atan2(shootJoy.getY(), shootJoy.getX());
+            shoot(angle);
+            shootCooldown=0;
+        }
+    } else { shootCooldown=shootInterval; }
 
-    // Move bullets
+    // Bullets move
     bullets.forEach((b,i)=>{
         b.x+=Math.cos(b.angle)*b.speed;
         b.y+=Math.sin(b.angle)*b.speed;
@@ -146,7 +152,7 @@ function update(){
         });
     });
 
-    // Enemy collision
+    // Enemy-player collision
     enemies.forEach((e,i)=>{
         const dx=player.x-e.x, dy=player.y-e.y;
         if(Math.sqrt(dx*dx+dy*dy)<player.size){
@@ -166,17 +172,14 @@ function update(){
 function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle=player.color;
-    ctx.beginPath();
-    ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
     bullets.forEach(b=>{
         ctx.fillStyle='yellow';
-        ctx.beginPath();
-        ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
     });
     enemies.forEach(e=>{
         ctx.fillStyle=e.color;
-        ctx.beginPath();
-        ctx.arc(e.x,e.y,e.size,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(e.x,e.y,e.size,0,Math.PI*2); ctx.fill();
     });
 }
 
