@@ -3,20 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reszponzív 2D FPS Joystick</title>
+<title>2D FPS Kisebb Karakter + Robbanás</title>
 <style>
-body, html {
-    margin:0; padding:0; overflow:hidden; background:#111; font-family:sans-serif; color:white; height:100%; touch-action:none;
-}
+body, html { margin:0; padding:0; overflow:hidden; background:#111; font-family:sans-serif; color:white; height:100%; touch-action:none; }
 canvas{ display:block; background:#222; }
 #ui { position:absolute; top:10px; left:10px; font-size:18px; z-index:10; }
 #gameOver { position:absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); color:white; display:flex; justify-content:center; align-items:center; font-size:40px; display:none; flex-direction:column; z-index:20; }
 #gameOver button { font-size:20px; padding:10px 20px; margin-top:20px; cursor:pointer; }
 
 /* Joysticks */
-.joystick {
-    position:absolute; bottom:20px; width:100px; height:100px; border-radius:50%; background: rgba(255,255,255,0.2); touch-action:none;
-}
+.joystick { position:absolute; bottom:20px; width:100px; height:100px; border-radius:50%; background: rgba(255,255,255,0.2); touch-action:none; }
 #moveJoystick { left:20px; }
 #shootJoystick { right:20px; background: rgba(255,0,0,0.2); }
 .stick { position:absolute; width:50px; height:50px; border-radius:50%; background: rgba(255,255,255,0.6); top:25px; left:25px; touch-action:none; }
@@ -40,8 +36,8 @@ window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
 
 // Player
-const player={x:canvas.width/2,y:canvas.height/2,size:25,speed:5,lives:3,color:'lightblue'};
-let bullets=[], enemies=[], score=0, gameOver=false;
+const player={x:canvas.width/2,y:canvas.height/2,size:15,speed:5,lives:3,color:'lightblue'};
+let bullets=[], enemies=[], explosions=[], score=0, gameOver=false;
 
 // Desktop keys
 const keys={};
@@ -92,10 +88,19 @@ const shootInterval=10; // nagyobb = lassabb lövés
 function spawnEnemy(type){
     const x=Math.random()*canvas.width;
     const y=Math.random()*canvas.height;
-    let size=30,speed=1+Math.random()*2,points=1,color='red';
-    if(type==='fast'){size=25; speed=3; points=2; color='orange';}
-    if(type==='strong'){size=50; speed=1; points=3; color='darkred';}
+    let size=15, speed=1+Math.random()*2, points=1, color='red';
+    if(type==='fast'){ size=12; speed=3; points=2; color='orange'; }
+    if(type==='strong'){ size=25; speed=1; points=3; color='darkred'; }
     enemies.push({x,y,size,speed,points,type,color});
+}
+
+// Create explosion
+function createExplosion(x,y,color){
+    for(let i=0;i<8;i++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*3+1;
+        explosions.push({x,y,vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, life:15, color});
+    }
 }
 
 // Update
@@ -146,6 +151,7 @@ function update(){
                 enemies.splice(ei,1);
                 score+=e.points;
                 document.getElementById('score').textContent=score;
+                createExplosion(e.x,e.y,e.color); // robbanás
                 let types=['normal','fast','strong'];
                 spawnEnemy(types[Math.floor(Math.random()*types.length)]);
             }
@@ -166,20 +172,34 @@ function update(){
             }
         }
     });
+
+    // Update explosions
+    explosions.forEach((ex,i)=>{
+        ex.x+=ex.vx; ex.y+=ex.vy; ex.life--;
+        if(ex.life<=0) explosions.splice(i,1);
+    });
 }
 
 // Draw
 function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Player
     ctx.fillStyle=player.color;
     ctx.beginPath(); ctx.arc(player.x,player.y,player.size,0,Math.PI*2); ctx.fill();
+    // Bullets
     bullets.forEach(b=>{
         ctx.fillStyle='yellow';
         ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
     });
+    // Enemies
     enemies.forEach(e=>{
         ctx.fillStyle=e.color;
         ctx.beginPath(); ctx.arc(e.x,e.y,e.size,0,Math.PI*2); ctx.fill();
+    });
+    // Explosions
+    explosions.forEach(ex=>{
+        ctx.fillStyle=ex.color;
+        ctx.beginPath(); ctx.arc(ex.x,ex.y,Math.max(1,ex.life/2),0,Math.PI*2); ctx.fill();
     });
 }
 
@@ -191,7 +211,7 @@ function endGame(){ gameOver=true; document.getElementById('gameOver').style.dis
 
 // Restart
 function restartGame(){
-    gameOver=false; player.lives=3; bullets=[]; enemies=[]; score=0;
+    gameOver=false; player.lives=3; bullets=[]; enemies=[]; explosions=[]; score=0;
     document.getElementById('score').textContent=score;
     document.getElementById('lives').textContent=player.lives;
     document.getElementById('gameOver').style.display='none';
