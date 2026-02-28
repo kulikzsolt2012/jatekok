@@ -2,44 +2,33 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Retro Pixel Invader - Reszponzív</title>
+<title>Retro Pixel Invader - Joystick</title>
 <style>
-body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
+body { margin:0; overflow:hidden; background:black; font-family:sans-serif; touch-action: none; }
 canvas { display:block; }
-#controls {
-    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 15px; z-index:10;
+#joystick {
+    position:absolute; bottom:20px; left:20px; width:120px; height:120px; border-radius:50%;
+    background: rgba(255,255,255,0.2); touch-action: none;
 }
-button {
-    width: 70px; height: 70px; font-size: 28px; border-radius: 12px;
-    background: rgba(255,255,255,0.2); color:white; border:none;
-    touch-action: manipulation;
-}
-@media (max-width: 500px){
-    button { width: 60px; height: 60px; font-size:24px; }
+#joystickHandle {
+    position:absolute; width:50px; height:50px; border-radius:50%; background: rgba(255,255,255,0.5);
+    left:35px; top:35px;
 }
 </style>
 </head>
 <body>
 <canvas id="gameCanvas"></canvas>
-<div id="controls">
-    <button id="leftBtn">◀</button>
-    <button id="shootBtn">●</button>
-    <button id="rightBtn">▶</button>
-</div>
+<div id="joystick"><div id="joystickHandle"></div></div>
 <script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
+function resizeCanvas(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
 
-const ship = { x: canvas.width/2-25, y: canvas.height-50, width:50, height:15, speed:12 };
-const bullets = [], enemyBullets = [], enemies = [];
+const ship={x:canvas.width/2-25,y:canvas.height-50,width:50,height:15,speed:12};
+const bullets=[], enemyBullets=[], enemies=[];
 let enemyDirection=1, score=0, gameOver=false;
 let moveLeft=false, moveRight=false;
 let canShoot=true, shootDelay=250;
@@ -50,39 +39,27 @@ const spriteSize=10;
 
 function createEnemies(){
     enemies.length=0;
-    const cols=Math.floor(canvas.width / (spriteSize*10));
+    const cols=Math.floor(canvas.width/(spriteSize*10));
     const rows=4;
     for(let r=0;r<rows;r++){
         for(let c=0;c<cols;c++){
-            enemies.push({x:c*spriteSize*8+50, y:r*spriteSize*8+50, frame:0});
+            enemies.push({x:c*spriteSize*8+50,y:r*spriteSize*8+50,frame:0});
         }
     }
 }
 createEnemies();
 
-function drawShip(){ ctx.fillStyle='lime'; ctx.fillRect(ship.x, ship.y, ship.width, ship.height); }
+function drawShip(){ ctx.fillStyle='lime'; ctx.fillRect(ship.x,ship.y,ship.width,ship.height); }
 function drawBullets(){ ctx.fillStyle='red'; bullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height)); }
 function drawEnemyBullets(){ ctx.fillStyle='orange'; enemyBullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height)); }
-function drawInvader(e){ 
-    const sprite=e.frame ? invader2 : invader1;
-    ctx.fillStyle='cyan';
-    for(let row=0;row<sprite.length;row++){
-        for(let col=0;col<sprite[row].length;col++){
-            if(sprite[row][col]==='1') ctx.fillRect(e.x+col*spriteSize,e.y+row*spriteSize,spriteSize,spriteSize);
-        }
-    }
-}
-function drawEnemies(){ enemies.forEach(e=>drawInvader(e)); }
-function drawScore(){ 
-    ctx.fillStyle='white'; 
-    ctx.font = (canvas.width<500 ? "16px Arial" : "20px Arial"); 
-    ctx.fillText("Pontszám: "+score,10,30); 
-}
-function isColliding(a,b,width,height){ return a.x < b.x+width && a.x+a.width>b.x && a.y<b.y+height && a.y+a.height>b.y; }
+function drawInvader(e){ const sprite=e.frame?invader2:invader1; ctx.fillStyle='cyan';
+for(let r=0;r<sprite.length;r++){ for(let c=0;c<sprite[r].length;c++){ if(sprite[r][c]==='1') ctx.fillRect(e.x+c*spriteSize,e.y+r*spriteSize,spriteSize,spriteSize);}}}
+function drawEnemies(){ enemies.forEach(drawInvader); }
+function drawScore(){ ctx.fillStyle='white'; ctx.font=(canvas.width<500?"16px Arial":"20px Arial"); ctx.fillText("Pontszám:"+score,10,30);}
+function isColliding(a,b,width,height){ return a.x<b.x+width && a.x+a.width>b.x && a.y<b.y+height && a.y+a.height>b.y;}
 
 function update(){
     if(gameOver) return;
-
     if(moveLeft && ship.x>0) ship.x-=ship.speed;
     if(moveRight && ship.x+ship.width<canvas.width) ship.x+=ship.speed;
 
@@ -98,16 +75,11 @@ function update(){
     }
 
     let moveDown=false;
-    enemies.forEach(e=>{
-        e.x+=enemyDirection*2; e.frame=1-e.frame;
-        if(e.x+spriteSize*5>=canvas.width||e.x<=0) moveDown=true;
-    });
+    enemies.forEach(e=>{ e.x+=enemyDirection*2; e.frame=1-e.frame; if(e.x+spriteSize*5>=canvas.width||e.x<=0) moveDown=true;});
     if(moveDown){ enemyDirection*=-1; enemies.forEach(e=>e.y+=spriteSize*6); }
 
     let activeShooters=enemies.filter((_,i)=>i<2);
-    activeShooters.forEach(e=>{
-        if(Math.random()<0.01) enemyBullets.push({x:e.x+spriteSize*2.5-2,y:e.y+spriteSize*5,width:4,height:8});
-    });
+    activeShooters.forEach(e=>{ if(Math.random()<0.01) enemyBullets.push({x:e.x+spriteSize*2.5-2,y:e.y+spriteSize*5,width:4,height:8}); });
 
     for(let i=enemyBullets.length-1;i>=0;i--){
         const b=enemyBullets[i]; b.y+=4;
@@ -122,45 +94,58 @@ function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawShip(); drawBullets(); drawEnemyBullets();
     drawEnemies(); drawScore();
-    if(gameOver){
-        ctx.fillStyle='red';
-        ctx.font = (canvas.width<500 ? "40px Arial" : "60px Arial");
-        ctx.fillText("VÉGE!",canvas.width/2-80,canvas.height/2);
-    }
+    if(gameOver){ ctx.fillStyle='red'; ctx.font=(canvas.width<500?"40px Arial":"60px Arial"); ctx.fillText("VÉGE!",canvas.width/2-80,canvas.height/2);}
 }
 
 function gameLoop(){ update(); draw(); requestAnimationFrame(gameLoop); }
-
-document.addEventListener('keydown',e=>{
-    if(e.key==='ArrowLeft') moveLeft=true;
-    if(e.key==='ArrowRight') moveRight=true;
-    if((e.key===' '||e.key==='ArrowUp')&&canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false;
-        setTimeout(()=>{canShoot=true;},shootDelay);
-    }
-});
-document.addEventListener('keyup',e=>{
-    if(e.key==='ArrowLeft') moveLeft=false;
-    if(e.key==='ArrowRight') moveRight=false;
-});
-
-canvas.addEventListener('mousedown', e=>{
-    if(canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false;
-        setTimeout(()=>{canShoot=true;},shootDelay);
-    }
-});
-
-// érintőképernyő gombok
-['leftBtn','rightBtn'].forEach(id=>{
-    document.getElementById(id).addEventListener('touchstart',()=>{if(id==='leftBtn') moveLeft=true; else moveRight=true;});
-    document.getElementById(id).addEventListener('touchend',()=>{if(id==='leftBtn') moveLeft=false; else moveRight=false;});
-});
-document.getElementById('shootBtn').addEventListener('touchstart',()=>{
-    if(canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false;
-        setTimeout(()=>{canShoot=true;},shootDelay);
-    }
-});
-
 gameLoop();
+
+// billentyűzet
+document.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') moveLeft=true; if(e.key==='ArrowRight') moveRight=true; if((e.key===' '||e.key==='ArrowUp')&&canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false; setTimeout(()=>{canShoot=true;},shootDelay); }});
+document.addEventListener('keyup',e=>{ if(e.key==='ArrowLeft') moveLeft=false; if(e.key==='ArrowRight') moveRight=false; });
+
+// egér
+canvas.addEventListener('mousedown', e=>{ if(canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false; setTimeout(()=>{canShoot=true;},shootDelay); }});
+
+// joystick érintés
+const joystick=document.getElementById('joystick');
+const handle=document.getElementById('joystickHandle');
+let joyStartX=0, joyStartY=0, active=false;
+joystick.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    active=true;
+    const t=e.targetTouches[0];
+    joyStartX=t.clientX; joyStartY=t.clientY;
+});
+joystick.addEventListener('touchmove',e=>{
+    if(!active) return;
+    e.preventDefault();
+    const t=e.targetTouches[0];
+    const dx=t.clientX-joyStartX;
+    // joystick max 40px elmozdulás
+    const maxMove=40;
+    const clampedDx=Math.max(-maxMove,Math.min(maxMove,dx));
+    handle.style.left=35+clampedDx+'px';
+    moveLeft=false; moveRight=false;
+    if(clampedDx<-5) moveLeft=true;
+    if(clampedDx>5) moveRight=true;
+});
+joystick.addEventListener('touchend',e=>{
+    e.preventDefault();
+    active=false;
+    handle.style.left='35px';
+    moveLeft=false; moveRight=false;
+});
+
+// jobb kéz lövés
+canvas.addEventListener('touchstart', e=>{
+    for(let i=0;i<e.changedTouches.length;i++){
+        const t=e.changedTouches[i];
+        if(t.clientX>canvas.width/2){
+            if(canShoot){ bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12}); canShoot=false; setTimeout(()=>{canShoot=true;},shootDelay); }
+        }
+    }
+});
 </script>
 </body>
 </html>
