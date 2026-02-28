@@ -3,84 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Labirintus játék - Teljes verzió</title>
+<title>Labirintus játék - Teljes verzió nagy joystick</title>
 <style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f0f0f0;
-  overflow: hidden;
-}
-#labirintus {
-  display: grid;
-  grid-template-columns: repeat(15, 1fr);
-  grid-template-rows: repeat(15, 1fr);
-  gap: 1px;
-  width: 90vmin;
-  height: 90vmin;
-  max-width: 600px;
-  max-height: 600px;
-  background-color: #444;
-  touch-action: none;
-  position: relative;
-}
-.cell { background-color: white; width:100%; height:100%; box-sizing:border-box;}
-.fal { background-color: black; }
-.jatekos { background-color: blue; }
-.cel { background-color: green; }
-.ellenfel { background-color: red; }
-.lovedek { background-color: yellow; }
+body { margin:0; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f0f0; overflow:hidden; }
+#labirintus { display:grid; grid-template-columns:repeat(15,1fr); grid-template-rows:repeat(15,1fr); gap:1px; width:90vmin; height:90vmin; max-width:600px; max-height:600px; background:#444; position:relative; }
+.cell { width:100%; height:100%; box-sizing:border-box; background:white; }
+.fal { background:black; }
+.jatekos { background:blue; }
+.cel { background:green; }
+.ellenfel { background:red; }
+.lovedek { background:yellow; }
 
 #joystickContainer {
-  position: absolute;
-  bottom: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 120px;
-  background-color: rgba(200,200,200,0.3);
-  border-radius: 50%;
-  touch-action: none;
-  display: none;
+  position:absolute;
+  bottom:10%;
+  left:15%;
+  width:160px;
+  height:160px;
+  background:rgba(200,200,200,0.3);
+  border-radius:50%;
+  touch-action:none;
 }
 #joystickKnob {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  background-color: rgba(100,100,255,0.5);
-  border-radius: 50%;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  position:absolute;
+  width:80px;
+  height:80px;
+  background:rgba(100,100,255,0.5);
+  border-radius:50%;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+}
+
+#shootBtn {
+  position:absolute;
+  bottom:15%;
+  right:15%;
+  width:60px;
+  height:60px;
+  background:red;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  font-weight:bold;
+  font-size:18px;
+  user-select:none;
+  touch-action:none;
 }
 </style>
 </head>
 <body>
 <div id="labirintus"></div>
-<div id="joystickContainer">
-  <div id="joystickKnob"></div>
-</div>
+<div id="joystickContainer"><div id="joystickKnob"></div></div>
+<div id="shootBtn">Lőj</div>
 
 <script>
-const size = 15;
-const labDiv = document.getElementById('labirintus');
-let labirintusTerkep = [];
-let playerPos = {};
-let enemies = [];
-let lovedekek = [];
-let lastDirection = {dx:0, dy:-1}; // alapértelmezett felfelé
+const size=15;
+const labDiv=document.getElementById('labirintus');
+let labirintusTerkep=[], playerPos={}, enemies=[], lovedekek=[], lastDirection={dx:0,dy:-1};
 
 function generateLabirintus(){
-  labirintusTerkep = Array.from({length: size}, ()=>Array(size).fill(1));
-  function carve(x,y){
-    labirintusTerkep[y][x]=0;
+  labirintusTerkep=Array.from({length:size},()=>Array(size).fill(1));
+  function carve(x,y){ labirintusTerkep[y][x]=0;
     const dirs=[{dx:0,dy:-2},{dx:0,dy:2},{dx:-2,dy:0},{dx:2,dy:0}].sort(()=>Math.random()-0.5);
-    dirs.forEach(d=>{
-      const nx=x+d.dx, ny=y+d.dy;
+    dirs.forEach(d=>{const nx=x+d.dx, ny=y+d.dy;
       if(nx>0 && nx<size-1 && ny>0 && ny<size-1 && labirintusTerkep[ny][nx]===1){
         labirintusTerkep[y+d.dy/2][x+d.dx/2]=0;
         carve(nx,ny);
@@ -94,9 +82,7 @@ function generateLabirintus(){
   while(enemies.length<3){
     const ex=Math.floor(Math.random()*(size-2))+1;
     const ey=Math.floor(Math.random()*(size-2))+1;
-    if(labirintusTerkep[ey][ex]===0 && !(ex===playerPos.x && ey===playerPos.y)){
-      enemies.push({x:ex,y:ey});
-    }
+    if(labirintusTerkep[ey][ex]===0 && !(ex===playerPos.x && ey===playerPos.y)) enemies.push({x:ex,y:ey});
   }
 }
 
@@ -104,8 +90,7 @@ function drawLabirintus(){
   labDiv.innerHTML='';
   for(let y=0;y<size;y++){
     for(let x=0;x<size;x++){
-      const cell=document.createElement('div');
-      cell.classList.add('cell');
+      const cell=document.createElement('div'); cell.classList.add('cell');
       if(labirintusTerkep[y][x]===1) cell.classList.add('fal');
       if(labirintusTerkep[y][x]===2) cell.classList.add('cel');
       if(playerPos.x===x && playerPos.y===y) cell.classList.add('jatekos');
@@ -116,107 +101,56 @@ function drawLabirintus(){
   }
 }
 
-function movePlayer(dx,dy){
-  const nx = playerPos.x+dx;
-  const ny = playerPos.y+dy;
-  if(labirintusTerkep[ny][nx]!==1){
-    playerPos.x=nx;
-    playerPos.y=ny;
-    if(dx!==0 || dy!==0) lastDirection={dx,dy};
-    drawLabirintus();
-    checkWin();
-    checkLose();
-  }
+function movePlayer(dx,dy){const nx=playerPos.x+dx, ny=playerPos.y+dy;
+  if(labirintusTerkep[ny][nx]!==1){playerPos.x=nx; playerPos.y=ny; if(dx!==0||dy!==0) lastDirection={dx,dy}; drawLabirintus(); checkWin(); checkLose();}
 }
 
-function shoot(){
-  if(lastDirection.dx!==0 || lastDirection.dy!==0){
-    lovedekek.push({x:playerPos.x, y:playerPos.y, dx:lastDirection.dx, dy:lastDirection.dy});
-  }
-}
+function shoot(){if(lastDirection.dx!==0||lastDirection.dy!==0) lovedekek.push({x:playerPos.x,y:playerPos.y,dx:lastDirection.dx,dy:lastDirection.dy});}
 
-function moveEnemies(){
-  const dirs=[{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}];
-  enemies.forEach(e=>{
-    const valid=dirs.filter(d=>labirintusTerkep[e.y+d.dy][e.x+d.dx]!==1);
-    if(valid.length>0){
-      const move=valid[Math.floor(Math.random()*valid.length)];
-      e.x+=move.dx; e.y+=move.dy;
-    }
-  });
-  drawLabirintus();
-  checkLose();
-}
+function moveEnemies(){const dirs=[{dx:0,dy:-1},{dx:0,dy:1},{dx:-1,dy:0},{dx:1,dy:0}]; enemies.forEach(e=>{const valid=dirs.filter(d=>labirintusTerkep[e.y+d.dy][e.x+d.dx]!==1); if(valid.length>0){const move=valid[Math.floor(Math.random()*valid.length)]; e.x+=move.dx;e.y+=move.dy;}}); drawLabirintus(); checkLose();}
 
-function moveLovedekek(){
-  for(let i=lovedekek.length-1;i>=0;i--){
-    let l=lovedekek[i];
-    const nx=l.x+l.dx, ny=l.y+l.dy;
-    if(nx<=0||nx>=size-1||ny<=0||ny>=size-1||labirintusTerkep[ny][nx]===1){
-      lovedekek.splice(i,1);continue;
-    }
-    let hitIndex=enemies.findIndex(e=>e.x===nx && e.y===ny);
-    if(hitIndex!==-1){
-      const killedEnemy=enemies.splice(hitIndex,1)[0];
-      lovedekek.splice(i,1);
-      // Új ellenfél spawn 2-3 mp múlva
-      setTimeout(()=>{
-        let ex, ey;
-        do {
-          ex=Math.floor(Math.random()*(size-2))+1;
-          ey=Math.floor(Math.random()*(size-2))+1;
-        } while(labirintusTerkep[ey][ex]!==0 || (ex===playerPos.x && ey===playerPos.y) || enemies.some(e=>e.x===ex && e.y===ey));
-        enemies.push({x:ex, y:ey});
-      }, 2000 + Math.random()*1000);
-      continue;
-    }
-    l.x=nx; l.y=ny;
+function moveLovedekek(){for(let i=lovedekek.length-1;i>=0;i--){let l=lovedekek[i]; const nx=l.x+l.dx, ny=l.y+l.dy;
+  if(nx<=0||nx>=size-1||ny<=0||ny>=size-1||labirintusTerkep[ny][nx]===1){lovedekek.splice(i,1); continue;}
+  let hitIndex=enemies.findIndex(e=>e.x===nx && e.y===ny);
+  if(hitIndex!==-1){enemies.splice(hitIndex,1); lovedekek.splice(i,1);
+    setTimeout(()=>{let ex,ey; do{ex=Math.floor(Math.random()*(size-2))+1; ey=Math.floor(Math.random()*(size-2))+1;}while(labirintusTerkep[ey][ex]!==0||(ex===playerPos.x&&ey===playerPos.y)||enemies.some(e=>e.x===ex&&e.y===ey)); enemies.push({x:ex,y:ey});},2000+Math.random()*1000);
+    continue;
   }
-}
+  l.x=nx; l.y=ny;
+}}
 
 function checkWin(){if(labirintusTerkep[playerPos.y][playerPos.x]===2) setTimeout(()=>alert('Gratulálok, kijutottál!'),100);}
 function checkLose(){if(enemies.some(e=>e.x===playerPos.x && e.y===playerPos.y)) setTimeout(()=>alert('Vesztettél!'),100);}
 
 // PC irányítás + lövés
-document.addEventListener('keydown', e=>{
-  switch(e.key){
-    case 'ArrowUp': movePlayer(0,-1); break;
-    case 'ArrowDown': movePlayer(0,1); break;
-    case 'ArrowLeft': movePlayer(-1,0); break;
-    case 'ArrowRight': movePlayer(1,0); break;
-    case ' ': shoot(); break;
-  }
-});
+document.addEventListener('keydown',e=>{switch(e.key){case 'ArrowUp': movePlayer(0,-1); break; case 'ArrowDown': movePlayer(0,1); break; case 'ArrowLeft': movePlayer(-1,0); break; case 'ArrowRight': movePlayer(1,0); break; case ' ': shoot(); break;}});
 
 // Mobil joystick
-const joystickContainer=document.getElementById('joystickContainer');
-if('ontouchstart' in window){
-  joystickContainer.style.display='block';
-  let joystickActive=false, origin={x:0,y:0};
-  joystickContainer.addEventListener('touchstart', e=>{
-    joystickActive=true;
-    origin={x:e.touches[0].clientX,y:e.touches[0].clientY};
-  });
-  joystickContainer.addEventListener('touchmove', e=>{
-    if(!joystickActive) return;
-    const dx=e.touches[0].clientX-origin.x;
-    const dy=e.touches[0].clientY-origin.y;
-    const threshold=15;
-    if(Math.abs(dx)>Math.abs(dy)){
-      if(dx>threshold) movePlayer(1,0);
-      else if(dx<-threshold) movePlayer(-1,0);
-    } else {
-      if(dy>threshold) movePlayer(0,1);
-      else if(dy<-threshold) movePlayer(0,-1);
-    }
-  });
-  joystickContainer.addEventListener('touchend',()=>{joystickActive=false;});
-}
+const joystickContainer=document.getElementById('joystickContainer'); 
+const joystickKnob=document.getElementById('joystickKnob');
+let joystickActive=false, origin={x:0,y:0};
+joystickContainer.addEventListener('touchstart',e=>{joystickActive=true; origin={x:e.touches[0].clientX, y:e.touches[0].clientY};});
+joystickContainer.addEventListener('touchmove',e=>{
+  if(!joystickActive) return;
+  const dx=e.touches[0].clientX-origin.x; const dy=e.touches[0].clientY-origin.y; const threshold=10;
+  let moved=false;
+  if(Math.abs(dx)>Math.abs(dy)){
+    if(dx>threshold){movePlayer(1,0); moved=true;}
+    else if(dx<-threshold){movePlayer(-1,0); moved=true;}
+  } else {
+    if(dy>threshold){movePlayer(0,1); moved=true;}
+    else if(dy<-threshold){movePlayer(0,-1); moved=true;}
+  }
+  if(moved){origin={x:e.touches[0].clientX, y:e.touches[0].clientY};}
+});
+joystickContainer.addEventListener('touchend',()=>{joystickActive=false;});
+
+// Mobil lövés gomb
+document.getElementById('shootBtn').addEventListener('touchstart', e=>{shoot(); e.preventDefault();});
 
 generateLabirintus();
 drawLabirintus();
 setInterval(()=>{moveEnemies(); moveLovedekek(); drawLabirintus();},300);
-
 </script>
 </body>
 </html>
