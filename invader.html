@@ -2,17 +2,17 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
-<title>Retro Pixel Invader - Joystick</title>
+<title>Retro Pixel Invader - Nagy joystick</title>
 <style>
 body { margin:0; overflow:hidden; background:black; font-family:sans-serif; touch-action: none; }
 canvas { display:block; }
 #joystick {
-    position:absolute; bottom:20px; left:20px; width:120px; height:120px; border-radius:50%;
+    position:absolute; bottom:20px; left:20px; width:220px; height:220px; border-radius:50%;
     background: rgba(255,255,255,0.2); touch-action: none;
 }
 #joystickHandle {
-    position:absolute; width:50px; height:50px; border-radius:50%; background: rgba(255,255,255,0.5);
-    left:35px; top:35px;
+    position:absolute; width:90px; height:90px; border-radius:50%; background: rgba(255,255,255,0.5);
+    left:65px; top:65px;
 }
 </style>
 </head>
@@ -23,7 +23,7 @@ canvas { display:block; }
 const canvas=document.getElementById("gameCanvas");
 const ctx=canvas.getContext("2d");
 
-function resizeCanvas(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
 
@@ -112,29 +112,22 @@ const joystick=document.getElementById('joystick');
 const handle=document.getElementById('joystickHandle');
 let joyStartX=0, joyStartY=0, active=false;
 joystick.addEventListener('touchstart',e=>{
-    e.preventDefault();
-    active=true;
-    const t=e.targetTouches[0];
-    joyStartX=t.clientX; joyStartY=t.clientY;
+    e.preventDefault(); active=true;
+    const t=e.targetTouches[0]; joyStartX=t.clientX; joyStartY=t.clientY;
 });
 joystick.addEventListener('touchmove',e=>{
-    if(!active) return;
-    e.preventDefault();
+    if(!active) return; e.preventDefault();
     const t=e.targetTouches[0];
     const dx=t.clientX-joyStartX;
-    // joystick max 40px elmozdulás
-    const maxMove=40;
+    const maxMove=90; // nagyobb elmozdulás
     const clampedDx=Math.max(-maxMove,Math.min(maxMove,dx));
-    handle.style.left=35+clampedDx+'px';
+    handle.style.left=65+clampedDx+'px';
     moveLeft=false; moveRight=false;
     if(clampedDx<-5) moveLeft=true;
     if(clampedDx>5) moveRight=true;
 });
 joystick.addEventListener('touchend',e=>{
-    e.preventDefault();
-    active=false;
-    handle.style.left='35px';
-    moveLeft=false; moveRight=false;
+    e.preventDefault(); active=false; handle.style.left='65px'; moveLeft=false; moveRight=false;
 });
 
 // jobb kéz lövés
