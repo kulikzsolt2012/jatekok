@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Labirintus játék véletlen térképpel</title>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+  }
+  #labirintus {
+    display: grid;
+    grid-template-columns: repeat(15, 40px);
+    grid-template-rows: repeat(15, 40px);
+    gap: 2px;
+  }
+  .cell {
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  .fal {
+    background-color: black;
+  }
+  .jatekos {
+    background-color: blue;
+  }
+  .cel {
+    background-color: green;
+  }
+  .ellenfel {
+    background-color: red;
+  }
+</style>
+</head>
+<body>
+<div id="labirintus"></div>
+
+<script>
+const size = 15;
+const labDiv = document.getElementById('labirintus');
+let labirintusTerkep = [];
+let playerPos = {};
+let enemies = [];
+
+// Véletlenszerű labirintus generálása (DFS)
+function generateLabirintus() {
+  labirintusTerkep = Array.from({length: size}, () => Array(size).fill(1));
+
+  function carve(x, y) {
+    labirintusTerkep[y][x] = 0;
+    const dirs = [
+      {dx:0, dy:-2}, {dx:0, dy:2}, {dx:-2, dy:0}, {dx:2, dy:0}
+    ].sort(() => Math.random() - 0.5); // random sorrend
+    dirs.forEach(d => {
+      const nx = x + d.dx;
+      const ny = y + d.dy;
+      if(nx > 0 && nx < size-1 && ny > 0 && ny < size-1 && labirintusTerkep[ny][nx] === 1) {
+        labirintusTerkep[y + d.dy/2][x + d.dx/2] = 0;
+        carve(nx, ny);
+      }
+    });
+  }
+
+  carve(1,1); // kezdőpont
+
+  // cél elhelyezése a labirintus másik sarkában
+  labirintusTerkep[size-2][size-2] = 2;
+
+  // játékos kezdő pozíció
+  playerPos = {x:1, y:1};
+
+  // három ellenfél véletlenszerű üres pozíciókban
+  enemies = [];
+  while(enemies.length < 3) {
+    const ex = Math.floor(Math.random()*(size-2))+1;
+    const ey = Math.floor(Math.random()*(size-2))+1;
+    if(labirintusTerkep[ey][ex] === 0 && !(ex === playerPos.x && ey === playerPos.y)) {
+      enemies.push({x:ex, y:ey});
+    }
+  }
+}
+
+function drawLabirintus() {
+  labDiv.innerHTML = '';
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      if(labirintusTerkep[y][x] === 1) cell.classList.add('fal');
+      if(labirintusTerkep[y][x] === 2) cell.classList.add('cel');
+      if(playerPos.x === x && playerPos.y === y) cell.classList.add('jatekos');
+      enemies.forEach(e => { if(e.x === x && e.y === y) cell.classList.add('ellenfel'); });
+      labDiv.appendChild(cell);
+    }
+  }
+}
+
+function movePlayer(dx, dy) {
+  const newX = playerPos.x + dx;
+  const newY = playerPos.y + dy;
+  if(labirintusTerkep[newY][newX] !== 1) {
+    playerPos.x = newX;
+    playerPos.y = newY;
+  }
+  drawLabirintus();
+  checkWin();
+  checkLose();
+}
+
+function moveEnemies() {
+  const directions = [
+    {dx:0, dy:-1}, {dx:0, dy:1}, {dx:-1, dy:0}, {dx:1, dy:0}
+  ];
+  enemies.forEach(e => {
+    const validMoves = directions.filter(d => labirintusTerkep[e.y + d.dy][e.x + d.dx] !== 1);
+    if(validMoves.length > 0) {
+      const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+      e.x += move.dx;
+      e.y += move.dy;
+    }
+  });
+  drawLabirintus();
+  checkLose();
+}
+
+function checkWin() {
+  if(labirintusTerkep[playerPos.y][playerPos.x] === 2) {
+    setTimeout(() => alert('Gratulálok, kijutottál a labirintusból!'), 100);
+  }
+}
+
+function checkLose() {
+  if(enemies.some(e => e.x === playerPos.x && e.y === playerPos.y)) {
+    setTimeout(() => alert('Vesztettél! Az ellenfél elkapott!'), 100);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  switch(e.key) {
+    case 'ArrowUp': movePlayer(0,-1); break;
+    case 'ArrowDown': movePlayer(0,1); break;
+    case 'ArrowLeft': movePlayer(-1,0); break;
+    case 'ArrowRight': movePlayer(1,0); break;
+  }
+});
+
+// játék inicializálása
+generateLabirintus();
+drawLabirintus();
+setInterval(moveEnemies, 800);
+
+</script>
+</body>
+</html>

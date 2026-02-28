@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lokális 2D FPS Karakterekkel</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #111;
+        font-family: sans-serif;
+        color: white;
+        height: 100%;
+    }
+    canvas {
+        display: block;
+        background-color: #222;
+    }
+    #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        z-index: 10;
+    }
+    #gameOver {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 50px;
+        display: none;
+        flex-direction: column;
+    }
+    #gameOver button {
+        font-size: 25px;
+        padding: 10px 20px;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+<div id="ui">
+    Pont: <span id="score">0</span> | Élet: <span id="lives">3</span>
+</div>
+<div id="gameOver">
+    <div>GAME OVER</div>
+    <button onclick="restartGame()">Újraindítás</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+// Canvas setup
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Player
+const player = { x: canvas.width/2, y: canvas.height/2, size: 25, speed: 5, lives: 3, color: 'lightblue' };
+let bullets = [];
+let enemies = [];
+let score = 0;
+let gameOver = false;
+
+// Keys
+const keys = {};
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+// Shoot
+canvas.addEventListener('click', (e)=>{
+    if(gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const angle = Math.atan2(my-player.y, mx-player.x);
+    bullets.push({x:player.x, y:player.y, angle:angle, speed:12});
+});
+
+// Spawn enemy
+function spawnEnemy(type){
+    const x = Math.random()*canvas.width;
+    const y = Math.random()*canvas.height;
+    let size = 30, speed = 1 + Math.random()*2, points = 1, color='red';
+    if(type==='fast'){ size=25; speed=3; points=2; color='orange'; }
+    if(type==='strong'){ size=50; speed=1; points=3; color='darkred'; }
+    enemies.push({x,y,size,speed,points,type,color});
+}
+
+// Update game
+function update(){
+    if(gameOver) return;
+    // Player move
+    if(keys['w']||keys['ArrowUp']) player.y -= player.speed;
+    if(keys['s']||keys['ArrowDown']) player.y += player.speed;
+    if(keys['a']||keys['ArrowLeft']) player.x -= player.speed;
+    if(keys['d']||keys['ArrowRight']) player.x += player.speed;
+    player.x = Math.max(player.size, Math.min(canvas.width-player.size, player.x));
+    player.y = Math.max(player.size, Math.min(canvas.height-player.size, player.y));
+
+    // Bullets move
+    bullets.forEach((b,i)=>{
+        b.x += Math.cos(b.angle)*b.speed;
+        b.y += Math.sin(b.angle)*b.speed;
+        if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height) bullets.splice(i,1);
+    });
+
+    // Enemies move
+    enemies.forEach(e=>{
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        e.x += (dx/dist)*e.speed;
+        e.y += (dy/dist)*e.speed;
+    });
+
+    // Bullet collision
+    bullets.forEach((b,bi)=>{
+        enemies.forEach((e,ei)=>{
+            const dx = b.x - e.x;
+            const dy = b.y - e.y;
+            if(Math.sqrt(dx*dx+dy*dy)<e.size/2){
+                bullets.splice(bi,1);
+                enemies.splice(ei,1);
+                score += e.points;
+                document.getElementById('score').textContent = score;
+                let types=['normal','fast','strong'];
+                spawnEnemy(types[Math.floor(Math.random()*types.length)]);
+            }
+        });
+    });
+
+    // Enemy-player collision
+    enemies.forEach((e,i)=>{
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        if(Math.sqrt(dx*dx+dy*dy)<player.size){
+            enemies.splice(i,1);
+            player.lives -=1;
+            document.getElementById('lives').textContent = player.lives;
+            if(player.lives<=0) endGame();
+            else{
+                let types=['normal','fast','strong'];
+                spawnEnemy(types[Math.floor(Math.random()*types.length)]);
+            }
+        }
+    });
+}
+
+// Draw
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Player
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x,player.y,player.size,0,Math.PI*2);
+    ctx.fill();
+    // Bullets
+    bullets.forEach(b=>{
+        ctx.fillStyle='yellow';
+        ctx.beginPath();
+        ctx.arc(b.x,b.y,5,0,Math.PI*2);
+        ctx.fill();
+    });
+    // Enemies
+    enemies.forEach(e=>{
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.size,0,Math.PI*2);
+        ctx.fill();
+    });
+}
+
+// Game loop
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Game over
+function endGame(){
+    gameOver=true;
+    document.getElementById('gameOver').style.display='flex';
+}
+
+// Restart
+function restartGame(){
+    gameOver=false;
+    player.lives=3;
+    bullets=[];
+    enemies=[];
+    score=0;
+    document.getElementById('score').textContent=score;
+    document.getElementById('lives').textContent=player.lives;
+    document.getElementById('gameOver').style.display='none';
+    for(let i=0;i<5;i++){
+        let types=['normal','fast','strong'];
+        spawnEnemy(types[Math.floor(Math.random()*types.length)]);
+    }
+}
+
+// Init enemies
+for(let i=0;i<5;i++){
+    let types=['normal','fast','strong'];
+    spawnEnemy(types[Math.floor(Math.random()*types.length)]);
+}
+
+gameLoop();
+</script>
+</body>
+</html>

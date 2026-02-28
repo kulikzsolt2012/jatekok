@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rólam</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            background: #000; /* csillagos éjszaka alap */
+        }
+
+        /* Csillag háttér */
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #0ff;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+            0% { transform: translateY(-100vh); opacity: 0.8; }
+            50% { opacity: 0.3; }
+            100% { transform: translateY(100vh); opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+            z-index: 1;
+            position: relative;
+        }
+
+        p {
+            max-width: 700px;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin: 20px;
+            color: #a0ffff;
+            z-index: 1;
+            position: relative;
+        }
+
+        .profile-pic {
+            width: 480px;
+            height: 360px;
+            border: 5px solid #0ff;
+            border-radius: 16px;
+            box-shadow: 0 0 20px #0ff, 0 0 40px #0ff inset;
+            margin: 20px 0;
+            z-index: 1;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.05) rotate(-1deg);
+            box-shadow: 0 0 40px #0ff, 0 0 80px #0ff inset;
+        }
+
+        .back-button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            color: #0ff;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #0ff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px #0ff, 0 0 30px #0ff inset;
+            z-index: 1;
+            position: relative;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 25px #0ff, 0 0 50px #0ff inset;
+            transform: translateY(-5px) scale(1.05);
+        }
+
+        /* Lebegő pontok */
+        .floating {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.1);
+            animation: float 12s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-50px) translateX(30px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Rólam</h1>
+
+    <img src="kulikzsolt.jpg" alt="Kulik Zsolt" class="profile-pic">
+
+    <p>
+        Üdvözöllek az oldalamon!<br>
+        Kulik Zsolt vagyok, itt találod az általam AI segítségeével készített játékaimat.<br>
+        Érdekel az AI, a programozás, játékfejlesztés és a futurisztikus webdesign.<br>        
+    </p>
+
+    <button class="back-button" onclick="window.location.href='index.html'">Vissza a Játékaimhoz</button>
+
+    <!-- Sci-fi lebegő pontok -->
+    <div class="floating" style="width: 50px; height: 50px; top: 15%; left: 20%; animation-duration: 14s;"></div>
+    <div class="floating" style="width: 30px; height: 30px; top: 60%; left: 30%; animation-duration: 16s;"></div>
+    <div class="floating" style="width: 40px; height: 40px; top: 40%; left: 75%; animation-duration: 18s;"></div>
+    <div class="floating" style="width: 20px; height: 20px; top: 25%; left: 55%; animation-duration: 20s;"></div>
+
+    <!-- Csillagok generálása JavaScript-tel -->
+    <script>
+        const starCount = 100;
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.animationDuration = (5 + Math.random() * 10) + 's';
+            star.style.width = star.style.height = (1 + Math.random() * 3) + 'px';
+            document.body.appendChild(star);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Retro Pixel Invader - Limitált bombázás</title>
+<style>
+  body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
+  canvas { display:block; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const ship = { x: canvas.width/2-25, y: canvas.height-50, width:50, height:15, speed:12 };
+const bullets = [];
+const enemyBullets = [];
+const enemies = [];
+let enemyDirection=1;
+let score=0;
+let gameOver=false;
+let moveLeft=false, moveRight=false;
+
+let canShoot=true;
+const shootDelay=250; 
+
+const invader1=[
+  "00100",
+  "01110",
+  "11111",
+  "10101",
+  "11111"
+];
+const invader2=[
+  "00100",
+  "01110",
+  "11111",
+  "10001",
+  "11111"
+];
+const spriteSize=10;
+
+function createEnemies(){
+    enemies.length=0;
+    const cols=Math.floor(canvas.width / (spriteSize*10));
+    const rows=4;
+    for(let r=0;r<rows;r++){
+        for(let c=0;c<cols;c++){
+            enemies.push({x:c*spriteSize*8+50, y:r*spriteSize*8+50, frame:0});
+        }
+    }
+}
+createEnemies();
+
+function drawShip(){ ctx.fillStyle='lime'; ctx.fillRect(ship.x, ship.y, ship.width, ship.height); }
+function drawBullets(){ ctx.fillStyle='red'; bullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height)); }
+function drawEnemyBullets(){ ctx.fillStyle='orange'; enemyBullets.forEach(b=>ctx.fillRect(b.x,b.y,b.width,b.height)); }
+function drawInvader(e){ 
+    const sprite=e.frame ? invader2 : invader1;
+    ctx.fillStyle='cyan';
+    for(let row=0;row<sprite.length;row++){
+        for(let col=0;col<sprite[row].length;col++){
+            if(sprite[row][col]==='1'){
+                ctx.fillRect(e.x+col*spriteSize, e.y+row*spriteSize, spriteSize, spriteSize);
+            }
+        }
+    }
+}
+function drawEnemies(){ enemies.forEach(e=>drawInvader(e)); }
+function drawScore(){ ctx.fillStyle='white'; ctx.font='20px Arial'; ctx.fillText("Pontszám: "+score,10,30); }
+
+function isColliding(a,b,width,height){
+    return a.x < b.x + width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + height &&
+           a.y + a.height > b.y;
+}
+
+function update(){
+    if(gameOver) return;
+
+    // játékos mozgatása
+    if(moveLeft && ship.x>0) ship.x-=ship.speed;
+    if(moveRight && ship.x+ship.width<canvas.width) ship.x+=ship.speed;
+
+    // játékos lövedékek
+    for(let i=bullets.length-1;i>=0;i--){
+        const b = bullets[i];
+        b.y -=6;
+        for(let j=enemies.length-1;j>=0;j--){
+            const e=enemies[j];
+            if(isColliding(b,e,spriteSize*5,spriteSize*5)){
+                bullets.splice(i,1);
+                enemies.splice(j,1);
+                score+=10;
+                break;
+            }
+        }
+        if(b.y<0) bullets.splice(i,1);
+    }
+
+    // ellenség mozgása
+    let moveDown=false;
+    enemies.forEach(e=>{
+        e.x += enemyDirection*2;
+        e.frame = 1 - e.frame;
+        if(e.x + spriteSize*5 >= canvas.width || e.x <= 0) moveDown=true;
+    });
+    if(moveDown){
+        enemyDirection*=-1;
+        enemies.forEach(e=>e.y+=spriteSize*6);
+    }
+
+    // ellenség lövedékek (max 2 egyszerre)
+    let activeShooters = enemies.filter((_,i)=>i<2); // csak az első két szörny lőhet
+    activeShooters.forEach(e=>{
+        if(Math.random()<0.01){ // véletlenszerű lövés
+            enemyBullets.push({x:e.x+spriteSize*2.5-2, y:e.y+spriteSize*5, width:4, height:8});
+        }
+    });
+
+    // ellenség lövedékek mozgása
+    for(let i=enemyBullets.length-1;i>=0;i--){
+        const b=enemyBullets[i];
+        b.y +=4;
+        if(isColliding(b,ship,ship.width,ship.height)) gameOver=true;
+        if(b.y>canvas.height) enemyBullets.splice(i,1);
+    }
+
+    // játék vége
+    enemies.forEach(e=>{if(e.y+spriteSize*5>=ship.y) gameOver=true;});
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawShip();
+    drawBullets();
+    drawEnemyBullets();
+    drawEnemies();
+    drawScore();
+    if(gameOver){
+        ctx.fillStyle='red';
+        ctx.font='60px Arial';
+        ctx.fillText("VÉGE!", canvas.width/2 -120, canvas.height/2);
+    }
+}
+
+function gameLoop(){ update(); draw(); requestAnimationFrame(gameLoop); }
+
+document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft') moveLeft=true;
+    if(e.key==='ArrowRight') moveRight=true;
+    if((e.key===' ' || e.key==='ArrowUp') && canShoot){
+        bullets.push({x:ship.x+ship.width/2-4,y:ship.y,width:8,height:12});
+        canShoot=false;
+        setTimeout(()=>{canShoot=true;},shootDelay);
+    }
+});
+document.addEventListener('keyup', e=>{
+    if(e.key==='ArrowLeft') moveLeft=false;
+    if(e.key==='ArrowRight') moveRight=false;
+});
+
+gameLoop();
+</script>
+</body>
+</html>
